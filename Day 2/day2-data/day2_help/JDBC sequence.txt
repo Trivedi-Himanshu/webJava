@@ -1,0 +1,95 @@
+Revise
+
+1. JDBC Steps
+
+2. Layered Architecture
+Tester --DAO (DBUtils)--POJO--DB
+
+3. Execute stored procedure to transfer funds from src to dest account
+
+Steps
+1. Create a Stored proc/func in DB
+
+2. Create CST(CallableStatement) from DB connection. => pre-parsed , pre compiled statement
+API of Connection i/f
+public CST prepareCall(String sql) throws SQLExc.
+sql : proc : "{call procName(?,?,?,?....)}"
+sql : func : "{?=call funcName(?,?,?,?....)}"
+{} : esc sequence meant for JDBC driver , to translate invocation syntax into DB specific invocation of a proc/function.
+Typically done in def ctor of DAO layer
+
+3. Register OUT params => Informing JVM about JDBC data type (generic SQL type : DB independent )  of OUT param.
+API of  CST 
+public void registerOutParameter(int paramPos,int jdbcType) throws SQLException
+Use java.sql.Types class constants to specify : jdbcType
+eg : Types.DOUBLE , Types.DECIMAL,....
+Typically done in def ctor of DAO layer
+
+
+4. IN : set it's value : public void setType(int paramIndex,Type value) throws SE
+OUT :  public void registerOutParamter((int paramIndex,int jdbcType) throws SE
+IN OUT :set it's value + registerOutParamter
+
+Setting IN param value : typically done in CRUD method (called per request of clnt)
+
+5. Execute the proc/func
+public boolean execute() throws SQLException
+Ret value is not required.
+
+6. Retrieve the results stored in OUT param
+API of CST
+public Type getType(int paramIndex) throws SQLException
+
+DB Transactions 
+Functionally grouped SQL stmts : representing a B.L.
+Tx => all the stmts from a Tx either fail or succeed.
+i.e If any stmt fails : entire Tx has to be discarded. 
+The changes made by the Tx will be made permanent : IFF all the stmts succeed.
+eg : Purchase a product
+Involves 1. Checking availability of the product
+2. Customer credit/debit limit & updating the same
+3. Updating stock .
+
+How to do it from JDBC API?
+
+1. Start a Tx
+Connection i/f method 
+void setAutoCommit(boolean flag:false)
+ie. unset the auto-commit flag.
+eg : cn.setAutoCommit(false);
+2. Wrap entire Tx within a separate try-catch block.
+3. If the entire try block succeds (i.e at the end of try) ---> commit the Tx
+API : public void commit() throws SQLException
+eg : cn.commit();
+4.But if you reach inside the catch clause(due to system exc or custom exc) : rollback the Tx
+API : public void rollback() throws SQLException
+eg : cn.rollback();
+5. To continue , in a non transactional manner  : set auto-commit to true again.
+
+
+
+
+6. To rollback a transaction partially , there exists additional method for setting save points.
+Connection i/f method
+public Savepoint setSavepoint() throws SQLException
+
+7. How to restore the DB state to a savepoint ?
+Connection i/f method
+void rollback(Savepoint savepoint) throws SQLException
+It will undo all changes made after the given Savepoint object was set.
+
+
+Default nature of ResultSet (i/f) object
+is TYPE_FORWARD (i.e can use only next() methods)
+READ_ONLY
+BUT with additional APIs(while creating ST/PST) you can modify nature of ResultSet
+to the scrollable type
+n updates can be made.
+(For details : refer : readme_jdbc.txt)
+
+
+
+
+
+
+

@@ -1,0 +1,227 @@
+DB Journey in Java 
+JDBC --Hibernate--JPA(Java Persistence API)--Spring Data JPA
+Revise JDBC (Java DB connectivity) Basics
+What is it ? API (java.sql) for connecting to DB , performing CRUD operations
+
+Why ?
+JDBC Apps are 
+1. Platform independent (thanks to JVM)
+2. Partial DB vendor independence.
+(WORA) -- run on ANY platform n run with ANY DB
+Why partial : since with DB SQL syntax may change , so will have to make changes in java code.
+
+How JDBC gives you DB independece ?
+1. JDBC Driver(connector)
+JOB : 2 way translator (Java API calls --> DB understadable format , result of the queries --> Java data format)
+
+How JDBC driver is supplied ?
+JAR format by DB vendors OR 3rd vendors
+
+Contents of JAR : 1. JDBC driver (eg : com.mysql.cj.jdbc.Driver)
+2. Implementation classes of JDBC API
+
+Specs (i/fs) : java.sql (supplied by Java: Oracle/Sun)
+IMplementation left to JDBC JAR vendors
+
+eg : Connection cn=DriverManager.getConnection(url,userName,pwd);
+Connection i/f : from java.sql
+Imple : JDBC JAR (eg : ConnectionImpl class)=> MySql DB conn
+Later when you change the DB to Oracle
+JDBC driver changes
+IN java code
+eg : Connection cn=DriverManager.getConnection(url,userName,pwd);
+cn --> OracleConnection
+
+JDBC Driver  types
+Type I --- Type IV
+Will be using Type IV 
+Pure (100 % ) Java Driver . Does not use ODBC layer or Narive DB lib or any native driver
+Layers :
+Java App -- Type IV JDBC Driver -- DB
+Typical steps in JDBC
+1. DBUtils : Get DB connection
+1.1 openConnection 
+Load JDBC Driver (in earlier JDBC versions)
+Class.forName("com.mysql.cj.jdbc.Driver");//OPTIONAL !
+Connection cn=DriverManager.getConnection(url,userName,pwd);
+
+1.2 closeConnection
+
+2. From java.sql.Connection , can create 3 differenty type of Statements
+2.1 Statement : i/f 
+Connection i/f method
+Statement createStatement() throws SQLExc.
+=> empty statement (i.e doesn't yet holds sql)
+Use case : in case of static (no IN params) n non repeatative queries
+Vulnerable to SQL injection attack
+
+2.2 Typically will be using PreparedStatement i.f
+PreparedStatement extends from Statement.
+=> pre parsed n pre compiled statement.
+Connection i/f method 
+PST prepareStatement(String sql) throws SQLExc.
+Use case :  in case of IN paramterized queries , repeatative queries.
+NOT Vulnerable to SQL injection attack.
+
+How to set IN params
+Method of PST
+public void setType(int paramPos,Type value) throws SqlExc
+Type : JDBC data type
+eg : To sign in 
+PST pst=cn.prepareStatement("select * from users where email=? and password=?");
+pst.setString(1, userEm);....
+
+3. JDBC execution methods
+In case of select query (ResultSet returning queries)  : 
+3.1 public ResultSet executeQuery(String sql) throws SqlExc
+Use it with  Statement i/f
+OR
+3.1 public ResultSet executeQuery() throws SqlExc
+Use it with  PreparedStatement i/f
+
+3.2 In case DDL / DML
+public int executeUpdate(String sql) throws SqlExc
+Use it with  Statement i/f
+OR
+public int executeUpdate() throws SqlExc
+Use it with  PreparedStatement i/f
+Returns : no of rows affected.
+In case of DDL , rets 0 in case of success.
+
+4. Processing of RST(ResultSet) : i/f
+(RST cursor is before the 1st row , after executeQuery)
+4.1 public boolean next() throws SqlExc
+Rets true in case of rec exists, o.w rets false.
+Places the RST cursor on the next row
+4.2 To read column data
+RST API
+public Type getType(int colPos) throws SQLExc
+col pos : as it appears in RST
+OR
+public Type getType(String colName) throws SQLExc
+
+Objective
+1. Display list of users by a specific role
+i/p : role
+2. Create a layered application 
+Layers : Tester --DAO (uses DBUtils) --POJO --DB
+2.1 User login 
+User i/p : email , password
+
+2.2 New Voter registration
+User i/p : voter details (except id,role,status)
+
+o/p : rec insertion in users table n a status mesg
+
+2.3 Update voting status
+i/p : voter id
+o/p : mesg
+
+2.4 Delete voter details
+i/p : voter email
+------------------------------------------------
+Invocation n Execution of stored procedure / function from JDBC
+1. Create CallableStatment to invoke a proc/function
+API of Connection i/f
+public CallableStatement prepareCall(String sql) throws SQLException
+
+sql => invocation syntax for proc
+"{call procName(?,.....?)}"
+{} => Esc sequence meant for JDBC driver , to translate proc invocation as per DB syntax
+? => IN , OUT , IN OUT
+Typically written in DAO layer's def ctor .
+2. For IN params : setting IN params (setType methods inherited from PST)
+(Inheritance hierarchy : ST <---- PST <---- CST)
+Typically written in DAO layer's CRUD method (called once per request)
+
+3. Register OUT parameter/s
+API of CallableStatement :
+public void registerOutParameter(int paramPos,int jdbcType) throws SQLExc.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+Steps in JDBC
+Layered Architecture
+Tester --DAO (DBUtils )--POJO -- DB : for CRUD Apps
