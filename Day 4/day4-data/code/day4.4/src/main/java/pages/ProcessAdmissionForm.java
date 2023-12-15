@@ -40,10 +40,11 @@ public class ProcessAdmissionForm extends HttpServlet {
 			//Store student details under request scope
 			request.setAttribute("student_details",student);
 			pw.print("<h5>from 1st page.....</h5>");
-			pw.flush();
+//			pw.flush();
 			//get RD from request
 			RequestDispatcher rd=request.getRequestDispatcher("result");
 			rd.include(request, response);
+			
 			/*
 			 * WC retains resp buffer
 			 * Suspends exec of this ,method.
